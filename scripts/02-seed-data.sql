@@ -25,3 +25,9 @@ INSERT INTO students (student_id, name, class, section, father_name, mother_name
 ('STU003', 'Hassan Ahmed', 'Grade 11', 'A', 'Ahmed Hassan', 'Zainab Ahmed', '03007654321', '789 School Road, Islamabad', '2024-02-01'),
 ('STU004', 'Zara Sheikh', 'Grade 8', 'C', 'Omar Sheikh', 'Nadia Sheikh', '03005432109', '321 Garden Street, Karachi', '2024-02-10')
 ON CONFLICT (student_id) DO NOTHING;
+
+-- Remove or update the existing parent user line
+INSERT INTO users (name, email, password_hash, role, student_id)
+VALUES ('Parent John', 'parent@example.com', '$2b$10$rOzJqQqQqQqQqQqQqQqQqO', 'parent', 'STU001')
+ON CONFLICT (email) DO NOTHING;
+

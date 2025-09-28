@@ -14,6 +14,7 @@ export function middleware(request: NextRequest) {
 
   // ✅ Check for session cookie
   const sessionToken = request.cookies.get("session")?.value
+  // console.log(sessionToken)
   if (!sessionToken) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
@@ -27,6 +28,7 @@ export function middleware(request: NextRequest) {
 
   // Example: Role stored in cookie (string)
   const userRole = request.cookies.get("role")?.value
+  // console.log(userRole)
 
   if (pathname === "/") {
     // Redirect user to correct dashboard based on role
@@ -43,6 +45,7 @@ export const config = {
 }
 
 function getRedirectPath(role?: string): string {
+  // console.log(role)
   switch (role) {
     case "admin":
       return "/admin/dashboard"
@@ -52,7 +55,12 @@ function getRedirectPath(role?: string): string {
       return "/society/dashboard"
     case "accountant":
       return "/accountant/dashboard"
+    case "parent":
+      return "/parent/dashboard" // ✅ This exists in your app structure
+    case "student":
+      return "/student/dashboard" // ← Ensure this line exists
     default:
       return "/dashboard"
   }
 }
+

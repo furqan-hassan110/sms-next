@@ -110,6 +110,10 @@ export function getRedirectPath(role: string): string {
       return "/society/dashboard"
     case "accountant":
       return "/accountant/dashboard"
+    case "parent":  // ✅ Yeh add karein
+      return "/parent/dashboard"
+    case "student":
+      return "/student/dashboard"
     default:
       return "/dashboard"
   }
