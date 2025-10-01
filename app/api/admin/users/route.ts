@@ -1,4 +1,3 @@
-
 import { type NextRequest, NextResponse } from "next/server"
 import { getCurrentUser, hashPassword } from "@/lib/auth"
 import { sql } from "@/lib/database"
@@ -37,6 +36,8 @@ export async function POST(request: NextRequest) {
     const { name, email, role, password, cnic, phone, address, occupation, emergency_contact } =
       await request.json()
 
+    console.log("Received data:", { name, email, role, password, cnic, phone, address, occupation, emergency_contact });
+
     if (!name || !email || !role || !password) {
       return NextResponse.json({ success: false, error: "All fields are required" }, { status: 400 })
     }
@@ -52,25 +53,36 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password)
 
-    // Insert into users table
+    // Insert into users table - FIXED: using password_hash instead of password
     const [newUser] = await sql`
-      INSERT INTO users (name, email, role, password_hash)
-      VALUES (${name}, ${email}, ${role}, ${passwordHash})
+      INSERT INTO users (name, email, role, password_hash, created_at, updated_at)
+      VALUES (${name}, ${email}, ${role}, ${passwordHash}, NOW(), NOW())
       RETURNING id
     `
 
-    // ✅ If role = parent → insert into parents table
+    // If role = parent → insert into parents table
     if (role === "parent") {
+      // Check if parent-specific fields are provided
+      if (!cnic || !phone) {
+        return NextResponse.json(
+          { success: false, error: "CNIC and Phone are required for parents" },
+          { status: 400 }
+        )
+      }
+
       await sql`
-        INSERT INTO parents (user_id, cnic, phone, address, occupation, emergency_contact)
-        VALUES (${newUser.id}, ${cnic || null}, ${phone || null}, ${address || null}, ${occupation || null}, ${emergency_contact || null})
+        INSERT INTO parents (user_id, cnic, phone, address, occupation, emergency_contact, created_at, updated_at)
+        VALUES (${newUser.id}, ${cnic}, ${phone}, ${address || null}, ${occupation || null}, ${emergency_contact || null}, NOW(), NOW())
       `
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true, 
+      message: "User created successfully",
+      user: { id: newUser.id, name, email, role }
+    })
   } catch (error) {
     console.error("Create user error:", error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }
-

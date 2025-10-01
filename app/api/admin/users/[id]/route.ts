@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       `
     }
 
-    // ✅ If role = parent → update parents table too
+    // If role = parent → update parents table too
     if (role === "parent") {
       const parentExists = await sql`
         SELECT id FROM parents WHERE user_id = ${userId}
@@ -55,14 +55,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
               phone = ${phone || null},
               address = ${address || null},
               occupation = ${occupation || null},
-              emergency_contact = ${emergency_contact || null}
+              emergency_contact = ${emergency_contact || null},
+              updated_at = NOW()
           WHERE user_id = ${userId}
         `
       } else {
         // Insert new parent record (if missing)
         await sql`
-          INSERT INTO parents (user_id, cnic, phone, address, occupation, emergency_contact)
-          VALUES (${userId}, ${cnic || null}, ${phone || null}, ${address || null}, ${occupation || null}, ${emergency_contact || null})
+          INSERT INTO parents (user_id, cnic, phone, address, occupation, emergency_contact, created_at, updated_at)
+          VALUES (${userId}, ${cnic || null}, ${phone || null}, ${address || null}, ${occupation || null}, ${emergency_contact || null}, NOW(), NOW())
         `
       }
     }
@@ -109,4 +110,3 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }
-

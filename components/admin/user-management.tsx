@@ -149,7 +149,7 @@ export function UserManagement() {
 
   const fetchParentStudentLinks = async (parentId: number) => {
     try {
-      const response = await fetch(`/api/admin/parents/${parentId}/students`)
+      const response = await fetch(`/api/admin/parent/${parentId}/students`)
       const data = await response.json()
       if (data.success) {
         setParentStudentLinks(data.links)
@@ -254,7 +254,7 @@ export function UserManagement() {
     if (!selectedParent) return
 
     try {
-      const response = await fetch(`/api/admin/parents/${selectedParent.id}/students`, {
+      const response = await fetch(`/api/admin/parent/${selectedParent.id}/students`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(linkFormData),
@@ -290,7 +290,7 @@ export function UserManagement() {
     if (!selectedParent) return
 
     try {
-      const response = await fetch(`/api/admin/parents/${selectedParent.id}/students/${linkId}`, {
+      const response = await fetch(`/api/admin/parent/${selectedParent.id}/students/${linkId}`, {
         method: "DELETE",
       })
 

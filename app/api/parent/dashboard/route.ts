@@ -1,4 +1,4 @@
-// app/api/parent/dashboard/route.ts
+// app/api/parent/dashboard/route.ts - FIXED VERSION
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth"
 import { sql } from "@/lib/database"
@@ -36,45 +36,66 @@ export async function GET() {
 
     const studentIds = students.map(s => s.id)
 
-    // Get fee records
-    const studentFees = await sql`
+    // Get ALL vouchers with their payment status - FIXED: using sql() for array
+    const vouchersWithStatus = await sql`
       SELECT 
-        sf.id,
-        sf.student_id,
-        sf.fee_type,
-        sf.amount,
-        sf.due_date,
-        sf.status,
-        sf.payment_date
-      FROM student_fees sf
-      WHERE sf.student_id IN (${studentIds.join(',')})
-      ORDER BY sf.due_date DESC
+        fv.id,
+        fv.student_id,
+        fv.amount,
+        fv.due_date,
+        fv.created_at,
+        CASE 
+          WHEN fp.id IS NOT NULL THEN 'paid'
+          ELSE 'pending'
+        END as status,
+        fp.payment_date,
+        fp.payment_method,
+        fp.reference_number
+      FROM fee_vouchers fv
+      LEFT JOIN fee_payments fp ON fv.id = fp.voucher_id
+      WHERE fv.student_id IN ${sql(studentIds)}
+      ORDER BY fv.due_date DESC
+    `
+
+    // Get separate paid fees for statistics - FIXED: using sql() for array
+    const paidFees = await sql`
+      SELECT 
+        id,
+        voucher_id as student_id,
+        amount_paid as amount,
+        payment_date
+      FROM fee_payments 
+      WHERE voucher_id IN ${sql(studentIds)}
     `
 
     // Calculate statistics
     const totalStudents = students.length
-    const totalPendingFees = studentFees.filter(fee => fee.status === 'pending').length
-    const totalDueAmount = studentFees
-      .filter(fee => fee.status === 'pending' || fee.status === 'overdue')
-      .reduce((sum, fee) => sum + Number(fee.amount), 0)
+    const totalPendingFees = vouchersWithStatus.filter(fee => fee.status === 'pending').length
+    const totalDueAmount = vouchersWithStatus
+      .filter(fee => fee.status === 'pending')
+      .reduce((sum, fee) => sum + Number(fee.amount || 0), 0)
+    
+    const totalPaidAmount = paidFees.reduce((sum, fee) => sum + Number(fee.amount || 0), 0)
 
-    // Calculate next month fees
+    // Calculate next month pending fees
     const nextMonth = new Date()
     nextMonth.setMonth(nextMonth.getMonth() + 1)
-    const nextMonthFees = studentFees
+    const nextMonthFees = vouchersWithStatus
       .filter(fee => {
+        if (!fee.due_date || fee.status === 'paid') return false
         const dueDate = new Date(fee.due_date)
         return dueDate.getMonth() === nextMonth.getMonth() && 
                dueDate.getFullYear() === nextMonth.getFullYear()
       })
-      .reduce((sum, fee) => sum + Number(fee.amount), 0)
+      .reduce((sum, fee) => sum + Number(fee.amount || 0), 0)
 
     const dashboardData = {
       totalStudents,
       totalPendingFees,
       totalDueAmount,
+      totalPaidAmount,
       nextMonthFees,
-      studentFees: studentFees.map(fee => {
+      studentFees: vouchersWithStatus.map(fee => {
         const student = students.find(s => s.id === fee.student_id)
         return {
           id: fee.id,
@@ -82,11 +103,12 @@ export async function GET() {
           student_name: student?.name || '',
           class: student?.class || '',
           section: student?.section || '',
-          fee_type: fee.fee_type,
-          amount: Number(fee.amount),
+          fee_type: fee.payment_method || 'Fee Voucher',
+          amount: Number(fee.amount || 0),
           due_date: fee.due_date,
+          payment_date: fee.payment_date,
           status: fee.status,
-          payment_date: fee.payment_date
+          reference_number: fee.reference_number
         }
       }),
       students: students.map(student => ({
