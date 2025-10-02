@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CreditCard, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface SocietyStats {
   todayCollection: number
@@ -23,6 +24,7 @@ interface SocietyStats {
 export function SocietyDashboard() {
   const [stats, setStats] = useState<SocietyStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     fetchDashboardData()
@@ -43,6 +45,19 @@ export function SocietyDashboard() {
     }
   }
 
+  // Button click handlers - REMOVED Collect Fee
+  const handleMarkAsPaid = () => {
+    router.push("/society/mark-paid")
+  }
+
+  const handleViewPending = () => {
+    router.push("/society/pending")
+  }
+
+  const handleDailyReport = () => {
+    router.push("/society/reports")
+  }
+
   if (loading) {
     return <div className="flex justify-center p-8">Loading dashboard...</div>
   }
@@ -51,7 +66,7 @@ export function SocietyDashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Society Member Dashboard</h1>
-        <p className="text-gray-600">Fee collection and payment management</p>
+        <p className="text-gray-600">Fee collection monitoring and reporting</p>
       </div>
 
       {/* Collection Stats */}
@@ -90,20 +105,16 @@ export function SocietyDashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - REMOVED Collect Fee button */}
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common fee collection tasks</CardDescription>
+          <CardDescription>Fee monitoring and reporting tasks</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button className="h-20 flex flex-col items-center justify-center space-y-2">
-              <CreditCard className="h-6 w-6" />
-              <span className="text-sm">Collect Fee</span>
-            </Button>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button
+              onClick={handleMarkAsPaid}
               variant="outline"
               className="h-20 flex flex-col items-center justify-center space-y-2 bg-transparent"
             >
@@ -112,6 +123,7 @@ export function SocietyDashboard() {
             </Button>
 
             <Button
+              onClick={handleViewPending}
               variant="outline"
               className="h-20 flex flex-col items-center justify-center space-y-2 bg-transparent"
             >
@@ -120,6 +132,7 @@ export function SocietyDashboard() {
             </Button>
 
             <Button
+              onClick={handleDailyReport}
               variant="outline"
               className="h-20 flex flex-col items-center justify-center space-y-2 bg-transparent"
             >
